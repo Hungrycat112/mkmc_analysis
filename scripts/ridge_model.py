@@ -1,13 +1,3 @@
-"""
-This code takes mkmc k-mer frequency matrices
-
-1. Loads k-mer frequenc matrices from mkmc
-2. Computers age-associated k-mer correlatons
-3. Ridge regression with leave-one-out cross validation 
-4. evaluates prediction performance
-5. generates figures + summary statsitics
-
-"""
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -18,6 +8,17 @@ from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import r2_score, mean_squared_error
 from scipy.stats import spearmanr
 import os
+
+"""
+This code takes mkmc k-mer frequency matrices
+
+1. Loads k-mer frequenc matrices from mkmc
+2. Computers age-associated k-mer correlatons
+3. Ridge regression with leave-one-out cross validation 
+4. evaluates prediction performance
+5. generates figures + summary statsitics
+
+"""
 
 # Global pipeline settings
 USE_LOG_TRANSFORM = False
