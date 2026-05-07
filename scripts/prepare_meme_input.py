@@ -12,7 +12,7 @@ This script:
 
 # Input and output settings
 input_file = "1k_size_7_raw_cs_spearman_top"
-top_n = 1000
+top_n = 1000 # can change how many top k-mers you want to select
 
 positive_txt = "blood_top1000_trimmed_pos.txt"
 negative_txt = "blood_top1000_trimmed_neg.txt"
