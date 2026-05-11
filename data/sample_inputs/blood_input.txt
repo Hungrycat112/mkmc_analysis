@@ -1,4 +1,4 @@
-SRR36028170	/u/scratch/s/sonya/blood_samples/SRR36028170.fastq.gz
+SRR36028170	/u/scratch/s/sonya/blood_samples/SRR36028170.fastq.gz # 2nd column is path to data
 SRR36027734	/u/scratch/s/sonya/blood_samples/SRR36027734.fastq.gz
 SRR36301963	/u/scratch/s/sonya/blood_samples/SRR36301963.fastq.gz
 SRR36028056	/u/scratch/s/sonya/blood_samples/SRR36028056.fastq.gz
