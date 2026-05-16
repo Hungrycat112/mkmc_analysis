@@ -10,11 +10,11 @@ FASTQ reads -> preprocess / trim -> mkmc -> spearman -> top k-mer selected -> ma
 Example mkmc command: ./mkmc -m10 -k 7 -t 12 --cs 1000000000 --cor spearman -n freq -o matrix -f fq -p phenotype.txt input.txt output_prefix temp/
 
 ### Parameters
--k 7 -> 7-mer
---cor spearman -> spearman correlation with age
--n freq -> frequency normalization
--o matrix -> matrix output generation
--f fq -> FASTQ input format
+* `-k 7` → Perform 7-mer frequency analysis
+* `--cor spearman` → Compute Spearman correlation with chronological age
+* `-n freq` → Use normalized k-mer frequencies
+* `-o matrix` → Generate k-mer frequency matrix outputs
+* `-f fq` → Specify FASTQ input format
 
 ## Input Format
 ### input.txt
