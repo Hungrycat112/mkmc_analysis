@@ -7,7 +7,14 @@ This repository has computaional workflows for identifying age-associated k-mer 
 FASTQ reads -> preprocess / trim -> mkmc -> spearman -> top k-mer selected -> machine learning models -> evaluation + visualization
 
 ## Methods: 
-typical mkmc command: ./mkmc -m10 -k 7 -t 12 --cs 1000000000 --cor spearman -n freq -o matrix -f fq -p phenotype.txt input.txt output_prefix temp/
+Example mkmc command: ./mkmc -m10 -k 7 -t 12 --cs 1000000000 --cor spearman -n freq -o matrix -f fq -p phenotype.txt input.txt output_prefix temp/
+
+### Parameters
+-k 7 -> 7-mer
+--cor spearman -> spearman correlation with age
+-n freq -> frequency normalization
+-o matrix -> matrix output generation
+-f fq -> FASTQ input format
 
 ## Input Format
 ### input.txt
@@ -37,11 +44,19 @@ Example:
 ```
 
 ##  Machine learning: 
-Ridge Regression model + LOOCV
+Models evaluated:
+Ridge Regression model + Leave-One-Out Cross Validation (LOOCV)
+
+### Performance metrics include:
+- Pearson correlation
+- R²
+- Mean squared error (MSE)
+- p-value
 
 ## Motif Analysis: 
 - weblogo
 - logomaker
 - MEME suite
+
 
 
