@@ -9,7 +9,7 @@
 #$ -N blood_dl # job name
 #$ -l h_rt=24:00:00,h_data=64G # 24hr runtime, 64 GB memory per slot
 #$ -pe shared 2
-#$ -t 1-5 # task array (one task per sample)
+#$ -t 1-100 # task array (one task per sample)
 #$ -tc 5 # max is 5 concurrent tasks
 #$ -o logs/blood_dl_$TASK_ID.out
 #$ -e logs/blood_dl_$TASK_ID.err
