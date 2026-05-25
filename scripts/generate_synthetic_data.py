@@ -242,6 +242,84 @@ def read_fastq_gz_reads(fq_path):
         reads.append(lines[i].strip())
     return reads
 
+def draw_logo_to_file(kmers, output_path, k=7, title=None):
+    """
+    Build a frequency logo from a list of k-mers and save to file.
+    Mirrors make_logo() but accepts pathlib.Path and an optional title.
+    """
+    if not kmers:
+        print(f"No k-mers for {output_path}, skipping.")
+        return
+
+    counts = {b: [0] * k for b in 'ACGT'}
+    for kmer in kmers:
+        if len(kmer) != k:
+            continue
+        for pos, base in enumerate(kmer):
+            if base in counts:
+                counts[base][pos] += 1
+
+    df = pd.DataFrame(counts, index=range(k))
+    row_sums = df.sum(axis=1).replace(0, 1)
+    df = df.div(row_sums, axis=0)
+
+    fig, ax = plt.subplots(figsize=(5, 2.5))
+    logo = logomaker.Logo(
+        df, ax=ax,
+        fade_below=0.5,
+        shade_below=0.5,
+        width=0.9,
+        color_scheme={'A': '#2ecc71', 'C': '#3498db', 'G': '#e74c3c', 'T': '#f39c12'}
+    )
+    logo.style_spines(visible=False)
+    logo.style_spines(spines=['left', 'bottom'], visible=True)
+    logo.ax.set_ylabel('Probability', fontsize=9)
+    logo.ax.set_xlabel('Position', fontsize=9)
+    logo.ax.set_xticks(range(k))
+    logo.ax.set_xticklabels([str(i + 1) for i in range(k)])
+    logo.ax.set_ylim(0, 1)
+
+    if title:
+        logo.ax.set_title(title, fontsize=10, fontweight='bold', pad=4)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Saved: {output_path}")
+
+def get_pos_neg_kmers(table_path, top_n=100, corr_col="spearman", kmer_col="k-mer"):
+    """
+    Read an MKMC top-table and return (pos_kmers, neg_kmers).
+
+    Parameters
+    ----------
+    table_path : str or Path
+    top_n      : int or None — keep only the top N by |correlation|; None = keep all
+    corr_col   : column name for the correlation value (default "spearman")
+    kmer_col   : column name for the k-mer string      (default "k-mer")
+    """
+    df = pd.read_csv(table_path, sep=r"\s+", engine="python")
+    print(f"\nLoaded {table_path}")
+    print("Columns:", df.columns.tolist())
+    print("Total rows:", len(df))
+
+    df[kmer_col] = df[kmer_col].astype(str)
+
+    pos_df = df[df[corr_col] > 0].sort_values(corr_col, ascending=False)
+    neg_df = df[df[corr_col] < 0].sort_values(corr_col, ascending=True)
+
+    if top_n is not None:
+        pos_df = pos_df.head(top_n)
+        neg_df = neg_df.head(top_n)
+
+    pos_kmers = pos_df[kmer_col].tolist()
+    neg_kmers = neg_df[kmer_col].tolist()
+
+    print(f"  Positive k-mers kept : {len(pos_kmers)}")
+    print(f"  Negative k-mers kept : {len(neg_kmers)}")
+
+    return pos_kmers, neg_kmers
+
 """
 Build simulated source sequences
 """
@@ -396,84 +474,113 @@ for tissue in ["buccal", "blood"]:
     )
 
 """
-Synthetic data positive/negative k-mer logos
-Publication-style version
+Combined synthetic + real data positive/negative k-mer logos
+Publication-style 2×4 panel (A–H)
 """
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-TOP_N = 100 # top kmers
-syn_buccal_top_path = BASE_OUT / "buccal_all_synthetic_k7_spearman_top"
-syn_blood_top_path  = BASE_OUT / "blood_all_synthetic_k7_spearman_top"
+TOP_N = 100 # top k-mers
 
+#  paths 
+syn_buccal_top_path  = BASE_OUT / "buccal_all_synthetic_k7_spearman_top"
+syn_blood_top_path   = BASE_OUT / "blood_all_synthetic_k7_spearman_top"
+real_blood_top_path  = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data/blood_size7_trim_spearman_top"
+real_buccal_top_path = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data/1k_size_7_trim_spearman_top"
 
 # load k-mers
-buccal_pos_kmers, buccal_neg_kmers = get_pos_neg_kmers(
-    syn_buccal_top_path, top_n=TOP_N, corr_col="spearman", kmer_col="k-mer"
-)
-blood_pos_kmers, blood_neg_kmers = get_pos_neg_kmers(
-    syn_blood_top_path, top_n=TOP_N, corr_col="spearman", kmer_col="k-mer"
-)
+syn_buccal_pos,  syn_buccal_neg  = get_pos_neg_kmers(syn_buccal_top_path,  top_n=TOP_N, corr_col="spearman", kmer_col="k-mer")
+syn_blood_pos,   syn_blood_neg   = get_pos_neg_kmers(syn_blood_top_path,   top_n=TOP_N, corr_col="spearman", kmer_col="k-mer")
+real_buccal_pos, real_buccal_neg = get_pos_neg_kmers(real_buccal_top_path, top_n=TOP_N)
+real_blood_pos,  real_blood_neg  = get_pos_neg_kmers(real_blood_top_path,  top_n=TOP_N)
 
-# output logo paths
-syn_buccal_pos_logo = FIG_DIR / "synthetic_buccal_pos_logo.png"
-syn_buccal_neg_logo = FIG_DIR / "synthetic_buccal_neg_logo.png"
-syn_blood_pos_logo  = FIG_DIR / "synthetic_blood_pos_logo.png"
-syn_blood_neg_logo  = FIG_DIR / "synthetic_blood_neg_logo.png"
-
-# generate logos
-draw_logo_to_file(buccal_pos_kmers, syn_buccal_pos_logo, k=7)
-draw_logo_to_file(buccal_neg_kmers, syn_buccal_neg_logo, k=7)
-draw_logo_to_file(blood_pos_kmers,  syn_blood_pos_logo,  k=7)
-draw_logo_to_file(blood_neg_kmers,  syn_blood_neg_logo,  k=7)
-
-
-# assemble 2x2 panel
-fig, axes = plt.subplots(2, 2, figsize=(10, 5.5), dpi=300)
-
-panel_map = {
-    (0, 0): (syn_buccal_pos_logo, "A", "Buccal (ρ > 0)"),
-    (0, 1): (syn_buccal_neg_logo, "B", "Buccal (ρ < 0)"),
-    (1, 0): (syn_blood_pos_logo,  "C", "Blood (ρ > 0)"),
-    (1, 1): (syn_blood_neg_logo,  "D", "Blood (ρ < 0)"),
+# logo output paths
+logo_paths = {
+    "syn_buccal_pos":  FIG_DIR / "syn_buccal_pos_logo.png",
+    "syn_buccal_neg":  FIG_DIR / "syn_buccal_neg_logo.png",
+    "syn_blood_pos":   FIG_DIR / "syn_blood_pos_logo.png",
+    "syn_blood_neg":   FIG_DIR / "syn_blood_neg_logo.png",
+    "real_buccal_pos": FIG_DIR / "real_buccal_pos_logo.png",
+    "real_buccal_neg": FIG_DIR / "real_buccal_neg_logo.png",
+    "real_blood_pos":  FIG_DIR / "real_blood_pos_logo.png",
+    "real_blood_neg":  FIG_DIR / "real_blood_neg_logo.png",
 }
 
-for (i, j), (img_path, panel_label, panel_title) in panel_map.items():
-    ax = axes[i, j]
+# generate logos
+draw_logo_to_file(syn_buccal_pos,  logo_paths["syn_buccal_pos"],  k=7)
+draw_logo_to_file(syn_buccal_neg,  logo_paths["syn_buccal_neg"],  k=7)
+draw_logo_to_file(syn_blood_pos,   logo_paths["syn_blood_pos"],   k=7)
+draw_logo_to_file(syn_blood_neg,   logo_paths["syn_blood_neg"],   k=7)
+draw_logo_to_file(real_buccal_pos, logo_paths["real_buccal_pos"], k=7)
+draw_logo_to_file(real_buccal_neg, logo_paths["real_buccal_neg"], k=7)
+draw_logo_to_file(real_blood_pos,  logo_paths["real_blood_pos"],  k=7)
+draw_logo_to_file(real_blood_neg,  logo_paths["real_blood_neg"],  k=7)
 
-    if img_path.exists():
-        img = mpimg.imread(img_path)
-        ax.imshow(img)
+#assemble 2×4 panel (A–H)
+#   row 0: A(real buccal+)  B(real buccal-)  E(syn buccal+)  F(syn buccal-)
+#   row 1: C(real blood+)   D(real blood-)   G(syn blood+)   H(syn blood-)
+fig, axes = plt.subplots(2, 4, figsize=(20, 5.5), dpi=300)
+
+panel_map = {
+    (0, 0): ("real_buccal_pos", "A", "Buccal (ρ > 0)"),
+    (0, 1): ("real_buccal_neg", "B", "Buccal (ρ < 0)"),
+    (0, 2): ("syn_buccal_pos",  "E", "Buccal (ρ > 0)"),
+    (0, 3): ("syn_buccal_neg",  "F", "Buccal (ρ < 0)"),
+    (1, 0): ("real_blood_pos",  "C", "Blood (ρ > 0)"),
+    (1, 1): ("real_blood_neg",  "D", "Blood (ρ < 0)"),
+    (1, 2): ("syn_blood_pos",   "G", "Blood (ρ > 0)"),
+    (1, 3): ("syn_blood_neg",   "H", "Blood (ρ < 0)"),
+}
+
+for (i, j), (key, panel_label, panel_title) in panel_map.items():
+    ax   = axes[i, j]
+    path = logo_paths[key]
+
+    if path.exists():
+        ax.imshow(mpimg.imread(path))
     else:
-        ax.text(0.5, 0.5, f"Missing:\n{img_path.name}",
+        ax.text(0.5, 0.5, f"Missing:\n{path.name}",
                 ha="center", va="center", fontsize=9)
 
     ax.axis("off")
-
-    ax.text(
-        -0.08, 1.05, panel_label,
-        transform=ax.transAxes,
-        fontsize=13, fontweight="bold",
-        ha="left", va="bottom"
-    )
-
+    ax.text(-0.08, 1.05, panel_label,
+            transform=ax.transAxes,
+            fontsize=13, fontweight="bold",
+            ha="left", va="bottom")
     ax.set_title(panel_title, fontsize=11, fontweight="bold", pad=4)
+
+#  row labels (Buccal / Blood) on left edge
+for ax, row_label in zip(axes[:, 0], ["Buccal", "Blood"]):
+    ax.text(-0.18, 0.5, row_label,
+            transform=ax.transAxes,
+            fontsize=12, fontweight="bold",
+            rotation=90, ha="center", va="center")
+
+# column group headers (Real / Synthetic) above row 0 
+for col, group_label in zip([0, 2], ["Real", "Synthetic"]):
+    axes[0, col].annotate(
+        group_label,
+        xy=(1.0, 1.18), xycoords="axes fraction",
+        fontsize=13, fontweight="bold",
+        ha="center", va="bottom",
+        annotation_clip=False
+    )
 
 plt.subplots_adjust(
     left=0.06, right=0.99,
-    top=0.95, bottom=0.08,
+    top=0.92, bottom=0.08,
     wspace=0.08, hspace=0.12
 )
 
-# export
-syn_panel_png = FIG_DIR / "synthetic_data_pos_neg_kmer_logos.png"
-syn_panel_pdf = FIG_DIR / "synthetic_data_pos_neg_kmer_logos.pdf"
+#  export 
+out_png = FIG_DIR / "combined_pos_neg_kmer_logos.png"
+out_pdf = FIG_DIR / "combined_pos_neg_kmer_logos.pdf"
 
-plt.savefig(syn_panel_png, dpi=600, bbox_inches="tight")
-plt.savefig(syn_panel_pdf, bbox_inches="tight")
+plt.savefig(out_png, dpi=600, bbox_inches="tight")
+plt.savefig(out_pdf, bbox_inches="tight")
 plt.show()
 
-print("\nSaved final panel:")
-print(syn_panel_png)
-print(syn_panel_pdf)
+print("\nSaved:")
+print(out_png)
+print(out_pdf)
