@@ -1,13 +1,18 @@
 import pandas as pd
 
 """
-Prepare MEME input FASTA files from MKMC k-mer correlation output.
+Prepare MEME input FASTA files from MKMC k-mer correlation output. Note: this script was also used to prepare weblogo fasta format
 
 This script:
 1. Loads MKMC top k-mer correlation results
 2. Selects the strongest positively and negatively age-correlated k-mers
 3. Saves selected k-mers as plain text files
 4. Converts selected k-mers into FASTA format for MEME motif analysis
+
+-> afterwards, manually padded sequences (MEME requires certain length) via this command-line: 
+awk '{print ">kmer" NR "\nN" $0 "N"}' blood_top100_trimmed_neg.txt > blood_trimmed_neg_padded.fa 
+
+
 """
 
 # Input and output settings
