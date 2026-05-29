@@ -39,7 +39,7 @@ READ_LEN = 50
 READS_PER_SAMPLE = 5000
 
 BUCCAL_REPS_PER_GROUP = 100 # 300 samples
-BLOOD_REPS_PER_GROUP = 30 # 90 samples
+cfDNA_REPS_PER_GROUP = 30 # 90 samples
 
 BASE_OUT = Path("/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data")
 FASTQ_DIR = BASE_OUT / "fastq"
@@ -54,9 +54,9 @@ MKMC_PATH = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/mkmc-0.21.0.linux.x64/mkm
 !"$MKMC_PATH"
 
 BUCCAL_TEMP_DIR = TEMP_DIR / "buccal"
-BLOOD_TEMP_DIR  = TEMP_DIR / "blood"
+cfDNA_TEMP_DIR  = TEMP_DIR / "cfDNA"
 BUCCAL_TEMP_DIR.mkdir(parents=True, exist_ok=True)
-BLOOD_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+cfDNA_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 """
 helper functions
@@ -351,7 +351,7 @@ buccal_configs = [
     {"group": "old",    "age": 14, "host_reads": 2500, "bact_reads": 2500},
 ]
 
-blood_configs = [
+cfDNA_configs = [
     {"group": "young",  "age": 2,  "island_frac": 0.85},
     {"group": "middle", "age": 8,  "island_frac": 0.55},
     {"group": "old",    "age": 14, "island_frac": 0.25},
@@ -359,7 +359,7 @@ blood_configs = [
 
 """
 Generate FASTQ.gz files and separate MKMC input/phenotype files
-for buccal and blood
+for buccal and cfDNA
 """
 summary_rows = []
 
@@ -393,10 +393,10 @@ for cfg in buccal_configs:
         if rep == 1:
             print(f"  Sample: {sample_name} | reads: {len(reads)} | kmers: {len(cpg_kmers)}")
 
-print("\n=== BLOOD SYNTHETIC FASTQ FILES ===")
-for cfg in blood_configs:
-    for rep in range(1, BLOOD_REPS_PER_GROUP + 1):
-        sample_name = f"blood_{cfg['group']}_rep{rep}"
+print("\n=== cfDNA SYNTHETIC FASTQ FILES ===")
+for cfg in cfDNA_configs:
+    for rep in range(1, cfDNA_REPS_PER_GROUP + 1):
+        sample_name = f"cfDNA_{cfg['group']}_rep{rep}"
         n_island = int(READS_PER_SAMPLE * cfg["island_frac"])
         n_shore  = READS_PER_SAMPLE - n_island
         reads = (
@@ -414,7 +414,7 @@ for cfg in blood_configs:
             if cpg_kmers else 0
         )
         summary_rows.append({
-            "sample_type": "blood",
+            "sample_type": "cfDNA",
             "group": cfg["group"],
             "sample_name": sample_name,
             "age": cfg["age"],
@@ -434,7 +434,7 @@ Write combine per-tissue mkmc input files
 """
 TISSUE_FILE_INFO = {}
 
-for tissue in ["buccal", "blood"]:
+for tissue in ["buccal", "cfDNA"]:
     input_path  = BASE_OUT / f"{tissue}_all_input.txt"
     pheno_path  = BASE_OUT / f"{tissue}_all_phenotype.txt"
     temp_path   = TEMP_DIR / f"{tissue}_all"
@@ -462,7 +462,7 @@ for tissue in ["buccal", "blood"]:
 """
 Run MKMC once per tissue
 """
-for tissue in ["buccal", "blood"]:
+for tissue in ["buccal", "cfDNA"]:
     info = TISSUE_FILE_INFO[tissue]
     print(f"\n=== Running MKMC for {tissue} (all ages combined) ===")
     run_mkmc(
@@ -485,41 +485,41 @@ TOP_N = 100 # top k-mers
 
 #  paths 
 syn_buccal_top_path  = BASE_OUT / "buccal_all_synthetic_k7_spearman_top"
-syn_blood_top_path   = BASE_OUT / "blood_all_synthetic_k7_spearman_top"
-real_blood_top_path  = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data/blood_size7_trim_spearman_top"
+syn_cfDNA_top_path   = BASE_OUT / "cfDNA_all_synthetic_k7_spearman_top"
+real_cfDNA_top_path  = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data/cfDNA_size7_trim_spearman_top"
 real_buccal_top_path = "/content/drive/MyDrive/Ucla_Mkmc_Analysis/artificial_data/1k_size_7_trim_spearman_top"
 
 # load k-mers
 syn_buccal_pos,  syn_buccal_neg  = get_pos_neg_kmers(syn_buccal_top_path,  top_n=TOP_N, corr_col="spearman", kmer_col="k-mer")
-syn_blood_pos,   syn_blood_neg   = get_pos_neg_kmers(syn_blood_top_path,   top_n=TOP_N, corr_col="spearman", kmer_col="k-mer")
+syn_cfDNA_pos,   syn_cfDNA_neg   = get_pos_neg_kmers(syn_cfDNA_top_path,   top_n=TOP_N, corr_col="spearman", kmer_col="k-mer")
 real_buccal_pos, real_buccal_neg = get_pos_neg_kmers(real_buccal_top_path, top_n=TOP_N)
-real_blood_pos,  real_blood_neg  = get_pos_neg_kmers(real_blood_top_path,  top_n=TOP_N)
+real_cfDNA_pos,  real_cfDNA_neg  = get_pos_neg_kmers(real_cfDNA_top_path,  top_n=TOP_N)
 
 # logo output paths
 logo_paths = {
     "syn_buccal_pos":  FIG_DIR / "syn_buccal_pos_logo.png",
     "syn_buccal_neg":  FIG_DIR / "syn_buccal_neg_logo.png",
-    "syn_blood_pos":   FIG_DIR / "syn_blood_pos_logo.png",
-    "syn_blood_neg":   FIG_DIR / "syn_blood_neg_logo.png",
+    "syn_cfDNA_pos":   FIG_DIR / "syn_cfDNA_pos_logo.png",
+    "syn_cfDNA_neg":   FIG_DIR / "syn_cfDNA_neg_logo.png",
     "real_buccal_pos": FIG_DIR / "real_buccal_pos_logo.png",
     "real_buccal_neg": FIG_DIR / "real_buccal_neg_logo.png",
-    "real_blood_pos":  FIG_DIR / "real_blood_pos_logo.png",
-    "real_blood_neg":  FIG_DIR / "real_blood_neg_logo.png",
+    "real_cfDNA_pos":  FIG_DIR / "real_cfDNA_pos_logo.png",
+    "real_cfDNA_neg":  FIG_DIR / "real_cfDNA_neg_logo.png",
 }
 
 # generate logos
 draw_logo_to_file(syn_buccal_pos,  logo_paths["syn_buccal_pos"],  k=7)
 draw_logo_to_file(syn_buccal_neg,  logo_paths["syn_buccal_neg"],  k=7)
-draw_logo_to_file(syn_blood_pos,   logo_paths["syn_blood_pos"],   k=7)
-draw_logo_to_file(syn_blood_neg,   logo_paths["syn_blood_neg"],   k=7)
+draw_logo_to_file(syn_cfDNA_pos,   logo_paths["syn_cfDNA_pos"],   k=7)
+draw_logo_to_file(syn_cfDNA_neg,   logo_paths["syn_cfDNA_neg"],   k=7)
 draw_logo_to_file(real_buccal_pos, logo_paths["real_buccal_pos"], k=7)
 draw_logo_to_file(real_buccal_neg, logo_paths["real_buccal_neg"], k=7)
-draw_logo_to_file(real_blood_pos,  logo_paths["real_blood_pos"],  k=7)
-draw_logo_to_file(real_blood_neg,  logo_paths["real_blood_neg"],  k=7)
+draw_logo_to_file(real_cfDNA_pos,  logo_paths["real_cfDNA_pos"],  k=7)
+draw_logo_to_file(real_cfDNA_neg,  logo_paths["real_cfDNA_neg"],  k=7)
 
 #assemble 2×4 panel (A–H)
 #   row 0: A(real buccal+)  B(real buccal-)  E(syn buccal+)  F(syn buccal-)
-#   row 1: C(real blood+)   D(real blood-)   G(syn blood+)   H(syn blood-)
+#   row 1: C(real cfDNA+)   D(real cfDNA-)   G(syn cfDNA+)   H(syn cfDNA-)
 fig, axes = plt.subplots(2, 4, figsize=(20, 5.5), dpi=300)
 
 panel_map = {
@@ -527,10 +527,10 @@ panel_map = {
     (0, 1): ("real_buccal_neg", "B", "Buccal (ρ < 0)"),
     (0, 2): ("syn_buccal_pos",  "E", "Buccal (ρ > 0)"),
     (0, 3): ("syn_buccal_neg",  "F", "Buccal (ρ < 0)"),
-    (1, 0): ("real_blood_pos",  "C", "Blood (ρ > 0)"),
-    (1, 1): ("real_blood_neg",  "D", "Blood (ρ < 0)"),
-    (1, 2): ("syn_blood_pos",   "G", "Blood (ρ > 0)"),
-    (1, 3): ("syn_blood_neg",   "H", "Blood (ρ < 0)"),
+    (1, 0): ("real_cfDNA_pos",  "C", "cfDNA (ρ > 0)"),
+    (1, 1): ("real_cfDNA_neg",  "D", "cfDNA (ρ < 0)"),
+    (1, 2): ("syn_cfDNA_pos",   "G", "cfDNA (ρ > 0)"),
+    (1, 3): ("syn_cfDNA_neg",   "H", "cfDNA (ρ < 0)"),
 }
 
 for (i, j), (key, panel_label, panel_title) in panel_map.items():
@@ -550,8 +550,8 @@ for (i, j), (key, panel_label, panel_title) in panel_map.items():
             ha="left", va="bottom")
     ax.set_title(panel_title, fontsize=11, fontweight="bold", pad=4)
 
-#  row labels (Buccal / Blood) on left edge
-for ax, row_label in zip(axes[:, 0], ["Buccal", "Blood"]):
+#  row labels (Buccal / cfDNA) on left edge
+for ax, row_label in zip(axes[:, 0], ["Buccal", "cfDNA"]):
     ax.text(-0.18, 0.5, row_label,
             transform=ax.transAxes,
             fontsize=12, fontweight="bold",
