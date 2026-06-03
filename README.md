@@ -1,7 +1,7 @@
 # mkmc_analysis_pipeline
 
 ## Overview
-This repository has computaional workflows for identifying age-associated k-mer patterns in canine sequencing data, buccal and blood, using mkmc with machine learning analysis. 
+This repository has computational workflows for identifying age-associated k-mer patterns in canine sequencing data, buccal and blood, using mkmc with machine learning analysis. 
 
 ## Pipeline overview: 
 FASTQ reads → preprocessing/trimming → MKMC k-mer frequency analysis → Spearman correlation ranking → top k-mer selection → machine learning modeling → evaluation and visualization
