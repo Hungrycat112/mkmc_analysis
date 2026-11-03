@@ -61,4 +61,14 @@ Ridge Regression model + Leave-One-Out Cross Validation (LOOCV)
 - MEME suite
 
 
+## Publication
+
+This repository contains the code and analyses associated with our preprint published on bioRxiv.
+
+**Preprint:** [Read on bioRxiv](https://www.biorxiv.org/content/10.64898/2026.10.24.761006v1)
+
+**DOI:** https://doi.org/10.64898/2026.10.24.761006
+
+If you use this code or analysis in your research, please cite our preprint.
+
 
